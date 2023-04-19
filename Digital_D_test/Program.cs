@@ -11,33 +11,44 @@ namespace DD
         static void Main(string[] args)
         {
             string inputTxt = @"C:\Users\Anast\OneDrive\Рабочий стол\Digital_D_test\tolstoj_lew_nikolaewich-text_0040.fb2";
-            string outputTxt = @"C:\Users\Anast\OneDrive\Рабочий стол\Digital_D_test\output2.txt";
+            string outputTxt = @"C:\Users\Anast\OneDrive\Рабочий стол\Digital_D_test\output.txt";
 
 
             Dictionary<string, int> words = new Dictionary<string, int>();
-            //Regex regex = new Regex(@"\b[a-zа-яё'-]+\b", RegexOptions.IgnoreCase); //"output1.txt"
-            Regex regex = new Regex(@"\b[а-яё]+(-[а-яё]+)*\b", RegexOptions.IgnoreCase); //"output2.txt"
+            Regex regex = new Regex(@"\b[a-zа-яё'-]+\b", RegexOptions.IgnoreCase);
+            int startIndex;
+            int endIndex;
 
             using (StreamReader sr = new StreamReader(inputTxt))
             {
-                string line;
-
+                string line = "";
                 while ((line = sr.ReadLine()) != null)
                 {
+                    startIndex = line.IndexOf('<');
+                    while (startIndex >= 0)
+                    {
+                        endIndex = line.IndexOf('>', startIndex);
+                        if (endIndex > startIndex)
+                        {
+                            string tag = line.Substring(startIndex, endIndex - startIndex + 1);
+                            line = line.Replace(tag, "");
+                        }
+                        startIndex = line.IndexOf('<');
+                    }
                     foreach (Match match in regex.Matches(line))
                     {
                         string word = match.Value.ToLower();
-
-                        if (words.ContainsKey(word))
-                            words[word]++;
-                        else
-                            words[word] = 1;
+                        if (IsRussianOrEnglishWord(word) || word.Contains("-") || word.Contains("'"))
+                        {
+                            if (words.ContainsKey(word))
+                                words[word]++;
+                            else
+                                words[word] = 1;
+                        }
                     }
                 }
+
             }
-
-
-
             using (StreamWriter sw = new StreamWriter(outputTxt))
             {
                 sw.WriteLine($"Всего уникальных слов: {words.Count}\n");
@@ -48,7 +59,10 @@ namespace DD
                 }
             }
         }
-
+        private static bool IsRussianOrEnglishWord(string word)
+        {
+            return Regex.IsMatch(word, @"^[\p{IsCyrillic}\p{IsBasicLatin}]+$");
+        }
     }
 
 }
